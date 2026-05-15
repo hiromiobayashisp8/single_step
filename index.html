@@ -19,26 +19,30 @@
     <div class="max-w-4xl mx-auto">
         <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Single step ピークナビ</h1>
-            <p class="text-gray-600">測定された Rwp を入力して、最短でピークを追い込みます。</p>
+            <p class="text-gray-600">Rwpの大きさに応じてステップ幅を自動調整し、最速でピークへ導きます。</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column: Controls and Status -->
             <div class="lg:col-span-1 flex flex-col gap-6">
+                <!-- Step Settings -->
                 <div class="card p-6 bg-gray-50 border border-gray-200">
                     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">ステップ設定</h2>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[10px] text-gray-500 mb-1">荒いステップ</label>
+                            <label class="block text-[10px] text-gray-500 mb-1">標準ステップ</label>
                             <input type="number" id="step-coarse" step="0.0001" value="0.0010" class="w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-[10px] text-gray-500 mb-1">細かいステップ</label>
+                            <label class="block text-[10px] text-gray-500 mb-1">精密ステップ</label>
                             <input type="number" id="step-fine" step="0.0001" value="0.0001" class="w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
+                    <div class="mt-3 p-2 bg-amber-100 rounded text-[10px] text-amber-800">
+                        ※ Rwp > 20 の時は標準の5倍速で探索します。
+                    </div>
                 </div>
 
+                <!-- Status Panel -->
                 <div class="card p-6 border-t-4 border-blue-500">
                     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">ステータス</h2>
                     <div id="status-badge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 mb-2 uppercase">
@@ -49,6 +53,7 @@
                     </div>
                 </div>
 
+                <!-- Input/Operations -->
                 <div class="card p-6">
                     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">入力 / 操作</h2>
                     
@@ -64,14 +69,16 @@
 
                     <div id="measure-ui" class="hidden space-y-4">
                         <div class="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                            <span class="text-xs text-blue-600 font-bold">指示 2θ:</span>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-blue-600 font-bold">指示 2θ:</span>
+                                <span id="current-step-label" class="text-[10px] px-1.5 py-0.5 bg-blue-200 text-blue-800 rounded font-bold">STEP: ---</span>
+                            </div>
                             <div id="target-theta" class="text-4xl font-mono font-bold text-blue-700">-32.5100</div>
                         </div>
 
-                        <!-- 前回値の表示エリア（左詰め・指定フォーマット） -->
                         <div id="last-input-display" class="hidden p-3 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-800 flex items-center gap-1">
-                            <span class="font-bold">【前回値】</span>
-                            <span>2θ: <b id="last-theta-val" class="font-mono text-base">-</b> | Rwp: <b id="last-rwp-val" class="font-mono text-base">-</b></span>
+                            <span class="font-bold">【前回】</span>
+                            <span>Rwp: <b id="last-rwp-val" class="font-mono text-base">-</b></span>
                         </div>
 
                         <div>
@@ -87,22 +94,19 @@
                                 １つ戻る
                             </button>
                             <button onclick="app.reset()" class="flex-1 py-2 text-gray-400 text-sm hover:text-gray-600 transition">
-                                全リセット
+                                リセット
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Visualization -->
+            <!-- Chart and History -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="card p-6 h-[450px] relative">
                     <canvas id="peakChart"></canvas>
-                    <button onclick="app.copyToClipboard()" class="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-md text-xs text-gray-600 transition flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                        </svg>
-                        履歴をコピー
+                    <button onclick="app.copyToClipboard()" class="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-md text-xs text-gray-600 transition">
+                        履歴コピー
                     </button>
                 </div>
 
@@ -115,7 +119,7 @@
                                     <th class="px-4 py-2">No.</th>
                                     <th class="px-4 py-2">2θ (deg)</th>
                                     <th class="px-4 py-2">Rwp</th>
-                                    <th class="px-4 py-2">状態</th>
+                                    <th class="px-4 py-2">モード</th>
                                 </tr>
                             </thead>
                             <tbody id="history-body"></tbody>
@@ -125,6 +129,7 @@
             </div>
         </div>
 
+        <!-- Result Modal -->
         <div id="result-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
             <div class="card p-8 max-w-sm w-full text-center scale-up">
                 <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -138,14 +143,7 @@
                     <p id="final-theta" class="text-4xl font-mono font-bold text-blue-600">0.0000</p>
                     <p class="text-xs text-gray-400">最小 Rwp: <span id="final-rwp">0.00</span></p>
                 </div>
-                <div class="space-y-3">
-                    <button onclick="app.closeModal()" class="w-full py-3 gradient-bg text-white font-bold rounded-lg shadow-lg active:scale-95 transition">
-                        履歴・グラフを確認する
-                    </button>
-                    <button onclick="app.reset()" class="w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition">
-                        新しく別の測定を始める
-                    </button>
-                </div>
+                <button onclick="app.closeModal()" class="w-full py-3 gradient-bg text-white font-bold rounded-lg shadow-lg">OK</button>
             </div>
         </div>
     </div>
@@ -172,35 +170,11 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'nearest',
-                    intersect: false
-                },
                 scales: {
-                    x: { 
-                        title: { display: true, text: '2θ (deg)', font: { weight: 'bold' } },
-                        ticks: { 
-                            callback: v => v.toFixed(4),
-                            maxRotation: 0,
-                            autoSkip: true
-                        },
-                        grid: { color: '#f1f5f9' }
-                    },
-                    y: { 
-                        title: { display: true, text: 'Rwp', font: { weight: 'bold' } },
-                        grid: { color: '#f1f5f9' }
-                    }
+                    x: { ticks: { callback: v => v.toFixed(4) } },
+                    y: { title: { display: true, text: 'Rwp' } }
                 },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `2θ: ${context.parsed.x.toFixed(4)} | Rwp: ${context.parsed.y.toFixed(4)}`;
-                            }
-                        }
-                    }
-                }
+                plugins: { legend: { display: false } }
             }
         });
 
@@ -211,26 +185,28 @@
                 currentTheta: 0,
                 stepCoarse: 0.0010,
                 stepFine: 0.0001,
-                direction: 0,
+                direction: 1,
+                isDirectionFixed: false,
                 centerTheta: 0,
                 centerRwp: 0,
-                minusRwp: null,
-                plusRwp: null,
                 modalOpened: false
             },
 
             start() {
-                const inputVal = document.getElementById('start-theta').value;
-                const startTheta = parseFloat(inputVal);
+                const startTheta = parseFloat(document.getElementById('start-theta').value);
                 if (isNaN(startTheta)) return;
                 
-                this.state.stepCoarse = parseFloat(document.getElementById('step-coarse').value) || 0.0010;
-                this.state.stepFine = parseFloat(document.getElementById('step-fine').value) || 0.0001;
-                
-                this.state.history = [];
-                this.state.currentTheta = startTheta;
-                this.state.mode = 'COARSE';
-                this.state.modalOpened = false;
+                this.state = {
+                    ...this.state,
+                    mode: 'COARSE',
+                    history: [],
+                    currentTheta: startTheta,
+                    stepCoarse: parseFloat(document.getElementById('step-coarse').value) || 0.0010,
+                    stepFine: parseFloat(document.getElementById('step-fine').value) || 0.0001,
+                    direction: 1,
+                    isDirectionFixed: false,
+                    modalOpened: false
+                };
                 
                 chart.data.datasets[0].data = [];
                 chart.update();
@@ -242,67 +218,81 @@
                 const rwp = parseFloat(rwpInput.value);
                 if (isNaN(rwp)) return;
 
-                this.state.stepCoarse = parseFloat(document.getElementById('step-coarse').value) || 0.0010;
-                this.state.stepFine = parseFloat(document.getElementById('step-fine').value) || 0.0001;
-
                 const theta = this.state.currentTheta;
                 this.state.history.push({ x: theta, y: rwp, mode: this.state.mode });
                 
                 chart.data.datasets[0].data.push({ x: theta, y: rwp });
-                // 並び替えをして線が交差しないようにする
                 chart.data.datasets[0].data.sort((a, b) => a.x - b.x);
                 chart.update();
 
                 rwpInput.value = '';
                 rwpInput.focus();
-                this.processLogic();
+                this.processLogic(rwp);
                 this.updateUI();
             },
 
-            processLogic() {
+            getNextStepSize(currentRwp) {
+                if (currentRwp > 20) {
+                    return this.state.stepCoarse * 5;
+                }
+                return this.state.stepCoarse;
+            },
+
+            processLogic(currentRwp) {
                 const h = this.state.history;
+                if (h.length === 0) return;
                 const last = h[h.length - 1];
 
                 if (this.state.mode === 'COARSE') {
-                    if (h.length >= 2) {
+                    const stepSize = this.getNextStepSize(currentRwp);
+
+                    if (h.length === 2) {
+                        const first = h[0];
+                        if (last.y > first.y) {
+                            if (!this.state.isDirectionFixed) {
+                                this.state.direction = -1;
+                                this.state.isDirectionFixed = true;
+                                this.state.currentTheta = first.x + (this.state.direction * stepSize);
+                                return;
+                            } else {
+                                this.switchToFineScan(h[h.length-2]);
+                            }
+                        } else {
+                            this.state.isDirectionFixed = true;
+                            this.state.currentTheta += (this.state.direction * stepSize);
+                        }
+                    } else if (h.length > 2) {
                         const prev = h[h.length - 2];
                         if (last.y > prev.y) {
-                            this.state.centerTheta = prev.x;
-                            this.state.centerRwp = prev.y;
-                            this.state.mode = 'CHECK_MINUS';
-                            this.state.currentTheta = this.state.centerTheta - this.state.stepFine;
+                            this.switchToFineScan(prev);
                         } else {
-                            this.state.currentTheta += this.state.stepCoarse;
+                            this.state.currentTheta += (this.state.direction * stepSize);
                         }
                     } else {
-                        this.state.currentTheta += this.state.stepCoarse;
+                        this.state.currentTheta += (this.state.direction * stepSize);
                     }
                 } 
                 else if (this.state.mode === 'CHECK_MINUS') {
-                    this.state.minusRwp = last.y;
                     this.state.mode = 'CHECK_PLUS';
                     this.state.currentTheta = this.state.centerTheta + this.state.stepFine;
                 }
                 else if (this.state.mode === 'CHECK_PLUS') {
-                    this.state.plusRwp = last.y;
-                    if (this.state.centerRwp <= this.state.minusRwp && this.state.centerRwp <= this.state.plusRwp) {
+                    const plusRwp = last.y;
+                    const minusRwp = h[h.length - 2].y;
+                    const centerRwp = this.state.centerRwp;
+
+                    if (centerRwp <= minusRwp && centerRwp <= plusRwp) {
                         this.state.mode = 'FINISHED';
-                    } else if (this.state.minusRwp < this.state.plusRwp) {
-                        this.state.direction = -1;
-                        this.state.mode = 'FINE_SCAN';
-                        this.state.currentTheta = this.state.centerTheta - (this.state.stepFine * 2);
                     } else {
-                        this.state.direction = 1;
+                        this.state.direction = (minusRwp < plusRwp) ? -1 : 1;
                         this.state.mode = 'FINE_SCAN';
-                        this.state.currentTheta = this.state.centerTheta + (this.state.stepFine * 2);
+                        this.state.currentTheta = this.state.centerTheta + (this.state.direction * 2 * this.state.stepFine);
                     }
                 }
                 else if (this.state.mode === 'FINE_SCAN') {
-                    // 最新の測定値と、その「直前の同モードでの測定値」を比較
-                    const fineHistory = h.filter(item => item.mode === 'FINE_SCAN');
-                    if (fineHistory.length >= 2) {
-                        const prevFine = fineHistory[fineHistory.length - 2];
-                        if (last.y > prevFine.y) {
+                    const fineH = h.filter(x => x.mode === 'FINE_SCAN');
+                    if (fineH.length >= 2) {
+                        if (last.y > fineH[fineH.length - 2].y) {
                             this.state.mode = 'FINISHED';
                         } else {
                             this.state.currentTheta += (this.state.direction * this.state.stepFine);
@@ -317,79 +307,87 @@
                 }
             },
 
+            switchToFineScan(bestPoint) {
+                this.state.centerTheta = bestPoint.x;
+                this.state.centerRwp = bestPoint.y;
+                this.state.mode = 'CHECK_MINUS';
+                this.state.currentTheta = this.state.centerTheta - this.state.stepFine;
+            },
+
             updateUI() {
-                const { mode, currentTheta, history } = this.state;
-                
+                const { mode, currentTheta, history, stepCoarse } = this.state;
                 document.getElementById('setup-ui').classList.toggle('hidden', mode !== 'IDLE');
                 document.getElementById('measure-ui').classList.toggle('hidden', mode === 'IDLE' || mode === 'FINISHED');
                 document.getElementById('target-theta').textContent = currentTheta.toFixed(4);
 
-                const statusBadge = document.getElementById('status-badge');
-                statusBadge.textContent = mode;
-                document.getElementById('instruction').textContent = this.getInstructionText(mode);
+                const hasHistory = history.length > 0;
+                const lastRwp = hasHistory ? history[history.length-1].y : null;
                 
+                // ステップラベルの表示更新
+                const stepLabel = document.getElementById('current-step-label');
                 if (mode === 'COARSE') {
-                    statusBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-600 mb-2 uppercase";
-                } else if (mode.includes('CHECK') || mode === 'FINE_SCAN') {
-                    statusBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600 mb-2 uppercase";
-                } else {
-                    statusBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 mb-2 uppercase";
+                    if (!hasHistory) {
+                        stepLabel.textContent = "STEP: ---";
+                    } else {
+                        const nextStep = this.getNextStepSize(lastRwp);
+                        stepLabel.textContent = `STEP: ${nextStep.toFixed(4)}`;
+                    }
+                } else if (mode !== 'IDLE' && mode !== 'FINISHED') {
+                    stepLabel.textContent = `STEP: ${this.state.stepFine.toFixed(4)}`;
                 }
 
+                document.getElementById('status-badge').textContent = mode;
+                document.getElementById('instruction').textContent = this.getInstructionText(mode, lastRwp);
+                
                 const lastDisplay = document.getElementById('last-input-display');
-                if (history.length > 0) {
-                    const lastData = history[history.length - 1];
+                if (hasHistory) {
                     lastDisplay.classList.remove('hidden');
-                    document.getElementById('last-theta-val').textContent = lastData.x.toFixed(4);
-                    document.getElementById('last-rwp-val').textContent = lastData.y.toFixed(4);
+                    document.getElementById('last-rwp-val').textContent = lastRwp.toFixed(4);
                 } else {
                     lastDisplay.classList.add('hidden');
                 }
 
-                const minRwp = history.length > 0 ? Math.min(...history.map(h => h.y)) : null;
+                const minRwp = hasHistory ? Math.min(...history.map(h => h.y)) : null;
                 const tbody = document.getElementById('history-body');
                 tbody.innerHTML = history.map((h, i) => {
                     const isPeak = h.y === minRwp;
-                    const rowClass = isPeak ? 'bg-red-50/50' : 'border-b border-gray-50';
-                    const textClass = isPeak ? 'text-red-600 font-bold' : 'text-gray-800';
                     return `
-                        <tr class="${rowClass} hover:bg-gray-50">
-                            <td class="px-4 py-3 font-mono text-gray-400">${i + 1}</td>
-                            <td class="px-4 py-3 font-mono ${textClass}">${h.x.toFixed(4)}</td>
-                            <td class="px-4 py-3 font-mono ${isPeak ? 'text-red-600 font-bold' : 'text-blue-600'}">${h.y.toFixed(4)}</td>
-                            <td class="px-4 py-3 text-[10px] text-gray-400 uppercase">${h.mode}</td>
+                        <tr class="${isPeak ? 'bg-red-50/50 font-bold' : 'border-b border-gray-50'}">
+                            <td class="px-4 py-2 text-gray-400">${i + 1}</td>
+                            <td class="px-4 py-2 font-mono">${h.x.toFixed(4)}</td>
+                            <td class="px-4 py-2 font-mono text-blue-600">${h.y.toFixed(4)}</td>
+                            <td class="px-4 py-2 text-[10px] text-gray-400">${h.mode}</td>
                         </tr>`;
                 }).reverse().join('');
             },
 
-            getInstructionText(mode) {
+            getInstructionText(mode, rwp) {
+                if (mode === 'COARSE') {
+                    if (rwp === null) return '開始地点の Rwp を測定・入力してください。';
+                    return rwp > 20 ? 'Rwp > 20 のため、5倍速でザクザク探索中...' : 'Rwpが下がってきました。標準ステップで慎重に探索中。';
+                }
                 switch(mode) {
-                    case 'COARSE': return '荒探索中。Rwpが反転するまで数値を増やしてください。';
-                    case 'CHECK_MINUS': return '反転確認。中心の「左側」を測定します。';
-                    case 'CHECK_PLUS': return '次に、中心の「右側」を測定します。';
-                    case 'FINE_SCAN': return '精密追い込み中。Rwpが下がる方向に進みます。';
-                    case 'FINISHED': return '測定が完了しました。履歴を確認してください。';
-                    default: return '開始 2θ を入力してナビを開始してください。';
+                    case 'CHECK_MINUS': return 'ピーク付近。精密比較（左）を行います。';
+                    case 'CHECK_PLUS': return '精密比較（右）を行います。';
+                    case 'FINE_SCAN': return '精密追い込み中...';
+                    case 'FINISHED': return '完了しました！';
+                    default: return '開始してください。';
                 }
             },
 
             undo() {
-                if (this.state.history.length === 0) {
-                    this.state.mode = 'IDLE';
-                    this.updateUI();
-                    return;
+                if (this.state.history.length === 0) return this.reset();
+                this.state.history.pop();
+                const last = this.state.history[this.state.history.length - 1];
+                if (last) {
+                    this.state.mode = last.mode;
+                    this.state.currentTheta = last.x;
+                } else {
+                    this.reset();
                 }
-                const lastRemoved = this.state.history.pop();
-                
-                // チャートデータからも削除
-                const chartData = chart.data.datasets[0].data;
-                const index = chartData.findIndex(d => d.x === lastRemoved.x && d.y === lastRemoved.y);
-                if (index !== -1) chartData.splice(index, 1);
-                chart.update();
-
-                this.state.mode = lastRemoved.mode;
-                this.state.currentTheta = lastRemoved.x;
                 this.updateUI();
+                chart.data.datasets[0].data.pop();
+                chart.update();
             },
 
             showResult() {
@@ -398,44 +396,27 @@
                 document.getElementById('final-rwp').textContent = minData.y.toFixed(4);
                 document.getElementById('result-modal').classList.remove('hidden');
                 this.state.modalOpened = true;
-                this.state.mode = 'FINISHED';
-                this.updateUI();
             },
 
             closeModal() { document.getElementById('result-modal').classList.add('hidden'); },
 
             reset() {
-                this.state = {
-                    mode: 'IDLE',
-                    history: [],
-                    currentTheta: 0,
-                    stepCoarse: parseFloat(document.getElementById('step-coarse').value) || 0.0010,
-                    stepFine: parseFloat(document.getElementById('step-fine').value) || 0.0001,
-                    direction: 0, centerTheta: 0, centerRwp: 0, minusRwp: null, plusRwp: null, modalOpened: false
-                };
-                chart.data.datasets[0].data = [];
-                chart.update();
                 document.getElementById('result-modal').classList.add('hidden');
+                this.state.mode = 'IDLE';
+                this.state.history = [];
                 this.updateUI();
             },
 
             copyToClipboard() {
-                const sortedHistory = [...this.state.history].sort((a, b) => a.x - b.x);
-                const text = sortedHistory.map((h, i) => `${i+1}\t${h.x.toFixed(4)}\t${h.y.toFixed(4)}`).join('\n');
-                const tempEl = document.createElement('textarea');
-                tempEl.value = "No\t2theta\tRwp\n" + text;
-                document.body.appendChild(tempEl);
-                tempEl.select();
+                const text = this.state.history.map((h, i) => `${i+1}\t${h.x.toFixed(4)}\t${h.y.toFixed(4)}`).join('\n');
+                const temp = document.createElement('textarea');
+                temp.value = "No\t2theta\tRwp\n" + text;
+                document.body.appendChild(temp);
+                temp.select();
                 document.execCommand('copy');
-                document.body.removeChild(tempEl);
-                const btn = event.currentTarget;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = "コピーしました！";
-                setTimeout(() => btn.innerHTML = originalText, 2000);
+                document.body.removeChild(temp);
             }
         };
-
-        window.onload = () => app.updateUI();
     </script>
 </body>
 </html>
