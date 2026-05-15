@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Single step ピークナビ</title>
+    <title>Single step ピーク探索ナビ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -18,8 +18,8 @@
 <body class="p-4 md:p-8">
     <div class="max-w-4xl mx-auto">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Single step ピークナビ</h1>
-            <p class="text-gray-600">Rwpの大きさに応じてステップ幅を自動調整し、最速でピークへ導きます。</p>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Single step ピーク探索ナビ</h1>
+            <p class="text-gray-600">Rwpの大きさに応じてステップ幅を動的に変更し、最短ルートでピークへ導きます。</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -29,7 +29,7 @@
                     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">ステップ設定</h2>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[10px] text-gray-500 mb-1">標準ステップ</label>
+                            <label class="block text-[10px] text-gray-500 mb-1">基本ステップ</label>
                             <input type="number" id="step-coarse" step="0.0001" value="0.0010" class="w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div>
@@ -37,8 +37,10 @@
                             <input type="number" id="step-fine" step="0.0001" value="0.0001" class="w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
-                    <div class="mt-3 p-2 bg-amber-100 rounded text-[10px] text-amber-800">
-                        ※ Rwp > 20 の時は標準の5倍速で探索します。
+                    <div class="mt-3 p-2 bg-amber-50 rounded text-[9px] text-amber-900 space-y-1">
+                        <p>・Rwp > 50 : <b>10倍速</b> (0.0100)</p>
+                        <p>・50 ≥ Rwp > 20 : <b>5倍速</b> (0.0050)</p>
+                        <p>・Rwp ≤ 20 : 標準ステップ</p>
                     </div>
                 </div>
 
@@ -232,10 +234,12 @@
             },
 
             getNextStepSize(currentRwp) {
-                if (currentRwp > 20) {
-                    return this.state.stepCoarse * 5;
+                if (currentRwp > 50) {
+                    return this.state.stepCoarse * 10; // 10倍速
+                } else if (currentRwp > 20) {
+                    return this.state.stepCoarse * 5;  // 5倍速
                 }
-                return this.state.stepCoarse;
+                return this.state.stepCoarse; // 標準
             },
 
             processLogic(currentRwp) {
@@ -323,7 +327,6 @@
                 const hasHistory = history.length > 0;
                 const lastRwp = hasHistory ? history[history.length-1].y : null;
                 
-                // ステップラベルの表示更新
                 const stepLabel = document.getElementById('current-step-label');
                 if (mode === 'COARSE') {
                     if (!hasHistory) {
@@ -364,7 +367,9 @@
             getInstructionText(mode, rwp) {
                 if (mode === 'COARSE') {
                     if (rwp === null) return '開始地点の Rwp を測定・入力してください。';
-                    return rwp > 20 ? 'Rwp > 20 のため、5倍速でザクザク探索中...' : 'Rwpが下がってきました。標準ステップで慎重に探索中。';
+                    if (rwp > 50) return 'Rwp > 50 のため、10倍速で超高速探索中！';
+                    if (rwp > 20) return 'Rwp > 20 のため、5倍速でザクザク探索中...';
+                    return 'Rwpが下がってきました。標準ステップで慎重に探索中。';
                 }
                 switch(mode) {
                     case 'CHECK_MINUS': return 'ピーク付近。精密比較（左）を行います。';
